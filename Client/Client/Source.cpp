@@ -1,28 +1,34 @@
-#include <stdio.h>
+#include <iostream>
 #include <WinSock2.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define MAX 80
-#define PORT 8080
-#define SA struct sockaddr
-void func(int sockfd)
+#define MAX 4096
+#define PORT 6666
+
+using namespace std;
+
+void chat(int sockfd)
 {
     char buff[MAX];
+    string input;
     int n;
     for (;;) {
-        memset(buff, 0, sizeof(buff));
-        printf("Enter the string : ");
-        n = 0;
-        while ((buff[n++] = getchar()) != '\n');
-        send(sockfd, buff, sizeof(buff), 0);
-        memset(buff, 0, sizeof(buff));
+        // Get client input and send it to server
+        cout << "You: ";
+        cin >> input; 
+        send(sockfd, input.c_str(), sizeof(input), 0);
+
+        // receive message and copy it to buffer
+        memset(buff, 0, sizeof(buff));  // Clear buff before receiving
         recv(sockfd, buff, sizeof(buff), 0);
-        printf("From Server : %s", buff);
-        if ((strncmp(buff, "exit", 4)) == 0) {
-            printf("Client Exit...\n");
+        cout << "Server " << buff << endl;  // print the buffer that contain server message
+
+        // client exit if input include "exit"
+        if (input == "exit") {
+            cout << "Client Exit" << endl;
             break;
         }
     }
@@ -30,16 +36,16 @@ void func(int sockfd)
 
 int main()
 {
-    SOCKET sockfd, connfd;
-    struct sockaddr_in servaddr, cli;
+    SOCKET sockfd;
+    struct sockaddr_in servaddr;
 
-    // initialize winsock
+    // Initialize winsock
     static WSADATA wsaData;
     int wsatest = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (wsatest)
         exit(1);
 
-    // socket create and verification
+    // Socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == INVALID_SOCKET) {
         printf("socket creation failed...\n");
@@ -49,25 +55,25 @@ int main()
         printf("Socket successfully created..\n");
     memset(&servaddr, 0, sizeof(servaddr));
 
-    // assign structure
+    // Assign structure
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);
     inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
 
-    // connect the client socket to server socket
-    if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+    // Connect to server socket
+    if (connect(sockfd, (sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
         printf("connection with the server failed...\n");
         exit(0);
     }
     else
         printf("connected to the server..\n");
 
-    // function for chat
-    func(sockfd);
+    // chat loop function
+    chat(sockfd);
 
-    // close the socket
+    // close socket
     closesocket(sockfd);
 
-    // Close Winsock
+    // close Winsock
     WSACleanup();
 }

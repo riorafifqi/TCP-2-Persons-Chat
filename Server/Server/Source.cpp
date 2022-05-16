@@ -1,100 +1,99 @@
-#include <stdio.h>
+#include <iostream>
 #include <WinSock2.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define MAX 80
-#define PORT 8080
+#define MAX 4096
+#define PORT 6666
 #define SA struct sockaddr
 
-// Function designed for chat between client and server.
-void func(SOCKET client)
+using namespace std;
+
+void chat(SOCKET client)
 {
     char buff[MAX];
-    int n;
-    // infinite loop for chat
-    for (;;) {
-        memset(buff, 0, MAX);
+    string input;
 
+    while (true) {
+        memset(buff, 0, MAX);   // clear buff before receiving
+        
         // read the message from client and copy it in buffer
         recv(client, buff, sizeof(buff), 0);
+
         // print buffer which contains the client contents
-        printf("From client: %s\t To client : ", buff);
-        memset(buff, 0, MAX);
-        n = 0;
-        // copy server message in the buffer
-        while ((buff[n++] = getchar()) != '\n')
-            ;
+        cout << "Client: " << buff << endl;
+        cout << "Server: ";
+        
+        // Asking input for server message
+        cin >> input;
 
-        // and send that buffer to client
-        send(client, buff, sizeof(buff), 0);
+        // Send that input to client
+        send(client, input.c_str(), sizeof(input) + 1, 0);
 
-        // if msg contains "Exit" then server exit and chat ended.
-        if (strncmp("exit", buff, 4) == 0) {
-            printf("Server Exit...\n");
+        // if input contains "exit", server exit and chat ended.
+        if (input == "exit") {
+            cout << "Server Exit" << endl;
             break;
         }
     }
 }
 
-// Driver function
 int main()
 {
     SOCKET sockfd, client;
-    int len;
-    sockaddr_in servaddr, cli;
+    sockaddr_in servaddr, cliaddr;
 
-    // initialize winsock
+    // Initialize winsock
     static WSADATA wsaData;
     int wsatest = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (wsatest)
         exit(1);
 
-    // socket create and verification
+    // Create socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == INVALID_SOCKET) {
-        printf("socket creation failed...\n");
+        cout << "Socket creation failed" << endl;
         exit(0);
     }
     else
-        printf("Socket successfully created..\n");
+        cout << "Socket succesfully created" << endl;
     memset(&servaddr, 0, sizeof(servaddr));
 
-    // assign IP, PORT
+    // Assign IP, PORT
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.S_un.S_addr = INADDR_ANY;
+    servaddr.sin_addr.S_un.S_addr = INADDR_ANY;     // Assign to all available interface, not just localhost
     servaddr.sin_port = htons(PORT);
 
-    // Binding newly created socket to given IP and verification
+    // Bind socket and check if socket succesfully binded
     if ((bind(sockfd, (sockaddr*)&servaddr, sizeof(servaddr))) != 0) {
-        printf("socket bind failed...\n");
+        cout << "Socket binding failed" << endl;
         exit(0);
     }
     else
-        printf("Socket successfully binded..\n");
+        cout << "Socket succesfully binded" << endl;
 
-    // Now server is ready to listen and verification
+    // listen and check if server is ready for listening
     if ((listen(sockfd, 5)) != 0) {
-        printf("Listen failed...\n");
+        cout << "Listening failed" << endl;
         exit(0);
     }
     else
-        printf("Server listening..\n");
-    len = sizeof(cli);
-
-    // Accept the data packet from client and verification
-    client = accept(sockfd, (SA*)&cli, &len);
+        cout << "Server is listening" << endl;
+    
+    // Accept client socket
+    int lenClient = sizeof(cliaddr);
+    client = accept(sockfd, (sockaddr*)&cliaddr, &lenClient);
     if (client == INVALID_SOCKET) {
-        printf("server accept failed...\n");
+        cout << "Server accept failed" << endl;
         exit(0);
     }
     else
-        printf("server accept the client...\n");
+        cout << "Server accepting client" << endl;
 
     // Function for chatting between client and server
-    func(client);
+    chat(client);
 
     // After chatting close the socket
     closesocket(client);
