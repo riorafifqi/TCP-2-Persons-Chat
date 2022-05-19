@@ -5,9 +5,8 @@
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define MAX 4096
+#define MAX 1024
 #define PORT 6666
-#define SA struct sockaddr
 
 using namespace std;
 
@@ -30,7 +29,7 @@ void chat(SOCKET client)
         cin >> input;
 
         // Send that input to client
-        send(client, input.c_str(), sizeof(input) + 1, 0);
+        send(client, input.c_str(), sizeof(input), 0);
 
         // if input contains "exit", server exit and chat ended.
         if (input == "exit") {
@@ -42,7 +41,7 @@ void chat(SOCKET client)
 
 int main()
 {
-    SOCKET sockfd, client;
+    SOCKET server, client;
     sockaddr_in servaddr, cliaddr;
 
     // Initialize winsock
@@ -52,8 +51,8 @@ int main()
         exit(1);
 
     // Create socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == INVALID_SOCKET) {
+    server = socket(AF_INET, SOCK_STREAM, 0);
+    if (server == INVALID_SOCKET) {
         cout << "Socket creation failed" << endl;
         exit(0);
     }
@@ -67,7 +66,7 @@ int main()
     servaddr.sin_port = htons(PORT);
 
     // Bind socket and check if socket succesfully binded
-    if ((bind(sockfd, (sockaddr*)&servaddr, sizeof(servaddr))) != 0) {
+    if ((bind(server, (sockaddr*)&servaddr, sizeof(servaddr))) != 0) {
         cout << "Socket binding failed" << endl;
         exit(0);
     }
@@ -75,7 +74,7 @@ int main()
         cout << "Socket succesfully binded" << endl;
 
     // listen and check if server is ready for listening
-    if ((listen(sockfd, 5)) != 0) {
+    if ((listen(server, 5)) != 0) {
         cout << "Listening failed" << endl;
         exit(0);
     }
@@ -84,7 +83,7 @@ int main()
     
     // Accept client socket
     int lenClient = sizeof(cliaddr);
-    client = accept(sockfd, (sockaddr*)&cliaddr, &lenClient);
+    client = accept(server, (sockaddr*)&cliaddr, &lenClient);
     if (client == INVALID_SOCKET) {
         cout << "Server accept failed" << endl;
         exit(0);

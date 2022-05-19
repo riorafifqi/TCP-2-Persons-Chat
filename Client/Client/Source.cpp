@@ -5,7 +5,7 @@
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define MAX 4096
+#define MAX 1024
 #define PORT 6666
 
 using namespace std;
