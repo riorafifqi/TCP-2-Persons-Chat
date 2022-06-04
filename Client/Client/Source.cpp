@@ -1,11 +1,10 @@
 #include <iostream>
-#include <WinSock2.h>
 #include <stdlib.h>
 #include <string>
 #include <WS2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
-#define MAX 1024
+#define MAX 4096
 #define PORT 6666
 
 using namespace std;
@@ -14,17 +13,29 @@ void chat(int sockfd)
 {
     char buff[MAX];
     string input;
-    int n;
-    for (;;) {
+    int turn = 0;
+    while (true)
+    {
+        recv(sockfd, (char*)&turn, sizeof(turn), 0);
         // Get client input and send it to server
-        cout << "You: ";
-        cin >> input; 
-        send(sockfd, input.c_str(), sizeof(input), 0);
 
-        // receive message and copy it to buffer
-        memset(buff, 0, sizeof(buff));  // Clear buff before receiving
-        recv(sockfd, buff, sizeof(buff), 0);
-        cout << "Server " << buff << endl;  // print the buffer that contain server message
+        if (turn == 1)  // sending
+        {
+            cout << "You: ";
+            // send message
+            //memset(const_cast<char*>(input.c_str()), 0, sizeof(input));
+            cin >> input;
+            send(sockfd, input.c_str(), sizeof(input), 0);
+        }
+        else if (turn == 0) // receiving
+        {
+            cout << "Waiting...." << endl;
+            // receive message and copy it to buffer
+            //memset(const_cast<char*>(input.c_str()), 0, sizeof(input));  // Clear buff before receiving
+            recv(sockfd, buff, sizeof(input), 0);
+            cout << "From Server :  " << buff << endl;  // print the buffer that contain server message
+            memset(buff, 0, sizeof(buff));
+        }
 
         // client exit if input include "exit"
         if (input == "exit") {
